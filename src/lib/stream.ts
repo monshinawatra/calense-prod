@@ -11,13 +11,14 @@ export async function fetchStream<T>(url: string, body: Record<string, unknown>)
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let accumulated = '';
+  let done = false;
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    accumulated += decoder.decode(value, { stream: true });
+  while (!done) {
+    const result = await reader.read();
+    done = result.done;
+    if (result.value) accumulated += decoder.decode(result.value, { stream: true });
   }
-  accumulated += decoder.decode(); // flush remaining bytes
+  accumulated += decoder.decode();
 
   return JSON.parse(accumulated) as T;
 }
