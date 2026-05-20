@@ -3,8 +3,12 @@ import userEvent from '@testing-library/user-event';
 import { ErrorCard } from '../ErrorCard';
 
 it('renders the error message', () => {
-  render(<ErrorCard message="Something went wrong" />);
-  expect(screen.getByText('Something went wrong')).toBeInTheDocument();
+  render(<ErrorCard message="Network request failed" />);
+  // The component has a hardcoded title and renders {message} separately.
+  // Use getAllByText to handle both, then assert at least one is in the document.
+  const els = screen.getAllByText('Network request failed');
+  expect(els.length).toBeGreaterThan(0);
+  expect(els[0]).toBeInTheDocument();
 });
 
 it('renders retry button and calls onRetry when clicked', async () => {

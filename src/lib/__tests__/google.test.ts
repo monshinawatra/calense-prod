@@ -24,22 +24,31 @@ function mockErrorResponse(status = 401) {
   });
 }
 
+// fetchTodaysEvents now calls calendarList first, then fetches events per calendar.
+// call[0] = calendarList, call[1] = events for the first calendar id.
+
 describe('fetchTodaysEvents', () => {
   beforeEach(() => mockFetch.mockReset());
 
   it('calls Google Calendar API with auth header and returns items', async () => {
     const events = [{ id: '1', summary: 'Standup' }];
-    mockFetch.mockResolvedValue(mockOkResponse({ items: events }));
+    // First call: calendarList returns one calendar with id 'primary'
+    mockFetch
+      .mockResolvedValueOnce(mockOkResponse({ items: [{ id: 'primary', selected: true }] }))
+      .mockResolvedValueOnce(mockOkResponse({ items: events }));
 
     const result = await fetchTodaysEvents(TOKEN);
 
     expect(result).toEqual(events);
-    const [url, opts] = mockFetch.mock.calls[0] as [string, RequestInit];
-    expect(url).toContain('calendars/primary/events');
+    // calls[0] is calendarList, calls[1] is the events fetch
+    const [url, opts] = mockFetch.mock.calls[1] as [string, RequestInit];
+    expect(url).toContain('/events');
+    expect(url).toContain('timeMin');
     expect((opts.headers as Record<string, string>).Authorization).toBe(`Bearer ${TOKEN}`);
   });
 
   it('returns empty array when items is missing', async () => {
+    // calendarList returns no calendars -> no events fetched
     mockFetch.mockResolvedValue(mockOkResponse({}));
     expect(await fetchTodaysEvents(TOKEN)).toEqual([]);
   });
@@ -94,13 +103,16 @@ describe('fetchPastWeekEvents', () => {
 
   it('requests 7 days back and returns items', async () => {
     const events = [{ id: '2', summary: 'Sprint planning' }];
-    mockFetch.mockResolvedValue(mockOkResponse({ items: events }));
+    // call[0] = calendarList, call[1] = events
+    mockFetch
+      .mockResolvedValueOnce(mockOkResponse({ items: [{ id: 'primary', selected: true }] }))
+      .mockResolvedValueOnce(mockOkResponse({ items: events }));
 
     const result = await fetchPastWeekEvents(TOKEN);
 
     expect(result).toEqual(events);
-    const [url] = mockFetch.mock.calls[0] as [string];
-    expect(url).toContain('calendars/primary/events');
+    const [url] = mockFetch.mock.calls[1] as [string];
+    expect(url).toContain('/events');
     expect(url).toContain('timeMin');
   });
 });

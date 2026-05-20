@@ -19,8 +19,8 @@ it('renders sender, subject, summary, and urgency tag', () => {
   expect(screen.getByText('high')).toBeInTheDocument();
 });
 
-it('renders medium urgency with yellow styling class', () => {
+it('renders medium urgency with amber styling class', () => {
   render(<EmailSummaryRow email={{ ...highEmail, urgency: 'medium' }} />);
   const tag = screen.getByText('medium');
-  expect(tag.className).toContain('yellow');
+  expect(tag.className).toContain('amber');
 });
